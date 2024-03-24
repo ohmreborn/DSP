@@ -100,13 +100,7 @@ void slove(std::string output,int dim,int n_star,double **v,double **r,double *m
 
     double distance;
     double *norm_distance = new double[dim];
-    double *dr = new double[dim];
-
-    double **dv = new double*[n_star];
-
-    for (int i=0;i<n_star;i++){
-        dv[i] = new double[dim];
-    }
+    double *dv = new double[dim];
 
     std::ofstream myfile;
     myfile.open (output);
@@ -114,12 +108,10 @@ void slove(std::string output,int dim,int n_star,double **v,double **r,double *m
 
     for (int i=0;i<step;i++){
         for (int ai=0;ai<n_star;ai++){
-            for (int aj=0;aj<dim;aj++){
-                dv[ai][aj] = 0;
+                dv[ai] = 0;
+            for (int d=0;d<dim;d++){
+                myfile << r[ai][0] << "," << r[ai][1] << ",";
             }
-        for (int d=0;d<dim;d++){
-            myfile << r[ai][0] << "," << r[ai][1] << ",";
-        }
         myfile << star_name[ai] << "," << i << std::endl;
         }
         for (int star1=0;star1<n_star;star1++){
@@ -128,36 +120,27 @@ void slove(std::string output,int dim,int n_star,double **v,double **r,double *m
                     cblas_dcopy(dim,r[star2],1,norm_distance,1);
                     cblas_daxpy(dim,-1,r[star1],1,norm_distance,1);
                     distance = cblas_dnrm2(dim,norm_distance,1);
-                    cblas_dscal(dim,(G * m[star2]/(pow(distance,3))),norm_distance,1);
-                    cblas_daxpy(dim,1,norm_distance,1,dv[star1],1);
+                    cblas_daxpy(dim,(G * m[star2]/(pow(distance,3))),norm_distance,1,dv,1);
                 }
             }
+            cblas_daxpy(dim,dt,dv,1,v[star1],1);
         }
         for (int star=0;star<n_star;star++){
-            cblas_dscal(dim,dt,dv[star],1);
-            cblas_daxpy(dim,1,dv[star],1,v[star],1);
-            cblas_dcopy(dim,v[star],1,dr,1);
-            cblas_dscal(dim,dt,dr,1);
-            cblas_daxpy(dim,1,dr,1,r[star],1);
-            // std::cout << r[star][0] << ", " << r[star][1];
-            // std::cout << std::endl;
+            cblas_daxpy(dim,dt,v[star],1,r[star],1);
         }
 
     }
     myfile.close();
-    for (int i=0;i<n_star;i++){
-        delete[] dv[i];
-    }
+
     delete[] norm_distance;
     delete[] dv;
-    delete[] dr;
 }
 
 int main(){
     int n_star;
     const int dim = 2;
     const char delimeter = ',';
-    const std::string filename = "../input.csv";
+    const std::string filename = "../test.csv";
     const std::string output = "../output.csv";
 
     count_star(&n_star,filename);
